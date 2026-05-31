@@ -76,8 +76,12 @@
 
   <div class="client-bar">
     <label>Client:</label>
-    <input type="text" id="clientInput" placeholder="Enter client name (e.g. Aembit)" oninput="setClient(this.value)"/>
-    <button onclick="resetAll()">Reset</button>
+    <select id="clientSelect" onchange="switchClient(this.value)" style="flex:1;border:1.5px solid #e0e0e0;border-radius:6px;padding:7px 10px;font-size:13px;outline:none;background:white;">
+      <option value="">— Select or add client —</option>
+    </select>
+    <input type="text" id="clientInput" placeholder="New client name..." style="flex:1;border:1.5px solid #e0e0e0;border-radius:6px;padding:7px 10px;font-size:13px;outline:none;" onkeydown="if(event.key==='Enter')addClient()"/>
+    <button onclick="addClient()" style="background:#3DB87A;color:white;border:none;border-radius:6px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;">+ Add</button>
+    <button onclick="resetCurrent()" style="background:#eee;color:#555;border:none;border-radius:6px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;">Reset</button>
   </div>
 
   <div class="progress-wrap">
@@ -337,13 +341,52 @@
 
 </div>
 <script>
+  let currentClient = '';
+
   function toggle(id) {
     document.getElementById(id).classList.toggle('collapsed');
   }
-  function setClient(v) {
-    document.querySelectorAll('.cn').forEach(el => el.textContent = v || '[CLIENT]');
-    save();
+
+  function getAllClients() {
+    return JSON.parse(localStorage.getItem('ryyu_clients') || '[]');
   }
+
+  function saveAllClients(clients) {
+    localStorage.setItem('ryyu_clients', JSON.stringify(clients));
+  }
+
+  function renderSelect(selected) {
+    const sel = document.getElementById('clientSelect');
+    const clients = getAllClients();
+    sel.innerHTML = '<option value="">— Select client —</option>';
+    clients.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      if (c === selected) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  function addClient() {
+    const input = document.getElementById('clientInput');
+    const name = input.value.trim();
+    if (!name) return;
+    const clients = getAllClients();
+    if (!clients.includes(name)) { clients.push(name); saveAllClients(clients); }
+    input.value = '';
+    renderSelect(name);
+    switchClient(name);
+  }
+
+  function switchClient(name) {
+    if (!name) return;
+    currentClient = name;
+    document.querySelectorAll('.cn').forEach(el => el.textContent = name);
+    loadClientState(name);
+    updateProgress();
+  }
+
   function tick(cb) {
     cb.closest('li').classList.toggle('done', cb.checked);
     const step = cb.closest('.step');
@@ -351,42 +394,58 @@
     const done = step.querySelectorAll('input[type=checkbox]:checked');
     step.classList.toggle('step-done', all.length > 0 && all.length === done.length);
     updateProgress();
-    save();
+    saveClientState(currentClient);
   }
+
   function updateProgress() {
     const all = document.querySelectorAll('.checklist input');
     const done = document.querySelectorAll('.checklist input:checked');
     const pct = all.length ? Math.round(done.length/all.length*100) : 0;
     document.getElementById('progBar').style.width = pct + '%';
-    document.getElementById('progText').textContent = `${done.length} of ${all.length} complete`;
+    document.getElementById('progText').textContent = currentClient
+      ? `${currentClient}: ${done.length} of ${all.length} complete`
+      : `${done.length} of ${all.length} complete`;
   }
-  function resetAll() {
-    if (!confirm('Reset all checkboxes for this client?')) return;
+
+  function resetCurrent() {
+    if (!currentClient) return;
+    if (!confirm(`Reset all checkboxes for ${currentClient}?`)) return;
     document.querySelectorAll('.checklist input').forEach(cb => { cb.checked = false; cb.closest('li').classList.remove('done'); });
     document.querySelectorAll('.step').forEach(s => s.classList.remove('step-done'));
+    saveClientState(currentClient);
     updateProgress();
-    localStorage.removeItem('ryyu_ob');
   }
-  function save() {
-    const state = { client: document.getElementById('clientInput').value, checks: {} };
-    document.querySelectorAll('.checklist input').forEach((cb,i) => state.checks[i] = cb.checked);
-    localStorage.setItem('ryyu_ob', JSON.stringify(state));
+
+  function saveClientState(name) {
+    if (!name) return;
+    const checks = {};
+    document.querySelectorAll('.checklist input').forEach((cb,i) => checks[i] = cb.checked);
+    localStorage.setItem('ryyu_client_' + name, JSON.stringify(checks));
   }
-  function load() {
-    const raw = localStorage.getItem('ryyu_ob');
+
+  function loadClientState(name) {
+    document.querySelectorAll('.checklist input').forEach(cb => { cb.checked = false; cb.closest('li').classList.remove('done'); });
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('step-done'));
+    const raw = localStorage.getItem('ryyu_client_' + name);
     if (!raw) return;
-    const s = JSON.parse(raw);
-    if (s.client) { document.getElementById('clientInput').value = s.client; setClient(s.client); }
+    const checks = JSON.parse(raw);
     document.querySelectorAll('.checklist input').forEach((cb,i) => {
-      if (s.checks[i]) { cb.checked = true; cb.closest('li').classList.add('done'); }
+      if (checks[i]) { cb.checked = true; cb.closest('li').classList.add('done'); }
     });
     document.querySelectorAll('.step').forEach(step => {
       const all = step.querySelectorAll('input'); const done = step.querySelectorAll('input:checked');
       step.classList.toggle('step-done', all.length > 0 && all.length === done.length);
     });
-    updateProgress();
   }
-  load();
+
+  // Init
+  const clients = getAllClients();
+  // Pre-load test clients if none exist
+  if (clients.length === 0) {
+    ['Aembit', 'Na-Mii', 'Wool+Clay'].forEach(c => { if (!clients.includes(c)) clients.push(c); });
+    saveAllClients(clients);
+  }
+  renderSelect('');
   updateProgress();
 </script>
 </body>
