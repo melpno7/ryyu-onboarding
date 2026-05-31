@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ryyu Client Onboarding</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #111; padding: 24px; min-height: 100vh; }
+  .container { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 24px; }
+
+  .client-bar { background: white; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .client-bar label { font-size: 13px; font-weight: 600; color: #555; white-space: nowrap; }
+  .client-bar input { flex: 1; border: 1.5px solid #e0e0e0; border-radius: 6px; padding: 7px 10px; font-size: 13px; outline: none; }
+  .client-bar input:focus { border-color: #6B7CFF; }
+  .client-bar button { background: #6B7CFF; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  .progress-wrap { background: white; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-bottom: 8px; }
+  .progress-track { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #6B7CFF, #3DB87A); border-radius: 3px; transition: width 0.3s; }
+
+  .phase { background: white; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; }
+  .phase-header { padding: 14px 18px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .phase-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; flex-shrink: 0; }
+  .phase-title { font-size: 14px; font-weight: 700; flex: 1; }
+  .phase-meta { font-size: 11px; color: #888; }
+  .phase-chevron { font-size: 11px; color: #bbb; transition: transform 0.2s; }
+  .phase.collapsed .phase-chevron { transform: rotate(-90deg); }
+  .phase-body { padding: 0 18px 16px; }
+  .phase.collapsed .phase-body { display: none; }
+
+  .p1 .phase-header { border-left: 4px solid #6B7CFF; } .p1 .phase-num { background: #6B7CFF; }
+  .p2 .phase-header { border-left: 4px solid #FF8C42; } .p2 .phase-num { background: #FF8C42; }
+  .p3 .phase-header { border-left: 4px solid #3DB87A; } .p3 .phase-num { background: #3DB87A; }
+  .p4 .phase-header { border-left: 4px solid #9B59B6; } .p4 .phase-num { background: #9B59B6; }
+  .p5 .phase-header { border-left: 4px solid #E74C3C; } .p5 .phase-num { background: #E74C3C; }
+  .pT .phase-header { border-left: 4px solid #aaa; } .pT .phase-num { background: #aaa; }
+
+  .step { border: 1.5px solid #eee; border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+  .step.step-done { border-color: #A5D6A7; background: #F9FFF9; }
+  .step-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .step.step-done .step-title { color: #2E7D32; }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+  .bt { background: #f0f0f0; color: #555; }
+  .bs { background: #EEF0FF; color: #6B7CFF; font-family: monospace; }
+  .bo { background: #FFF3E0; color: #E65100; }
+  .bc { background: #FF8C42; color: white; }
+
+  .checklist { list-style: none; }
+  .checklist li { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; font-size: 12.5px; color: #333; line-height: 1.4; }
+  .checklist li input { margin-top: 2px; flex-shrink: 0; width: 14px; height: 14px; cursor: pointer; accent-color: #3DB87A; }
+  .checklist li.done { color: #bbb; text-decoration: line-through; }
+
+  .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .doc-link { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #6B7CFF; text-decoration: none; background: #EEF0FF; padding: 3px 8px; border-radius: 4px; }
+  .doc-link:hover { background: #dde0ff; }
+
+  .note { border-radius: 6px; padding: 8px 12px; font-size: 12px; margin-top: 8px; }
+  .note-yellow { background: #FFF8E1; border: 1px solid #FFD54F; color: #6D4C00; }
+  .note-blue { background: #E3F2FD; border: 1px solid #90CAF9; color: #0D47A1; }
+  .note-green { background: #E8F5E9; border: 1px solid #A5D6A7; color: #1B5E20; }
+
+  .tier-table { width: 100%; font-size: 11px; border-collapse: collapse; margin-top: 10px; }
+  .tier-table th { background: #f8f8f8; padding: 7px 10px; text-align: left; font-weight: 600; border-bottom: 2px solid #eee; }
+  .tier-table td { padding: 7px 10px; border-bottom: 1px solid #f0f0f0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🚀 Ryyu Client Onboarding</h1>
+  <p class="subtitle">5 phases · Follow in order · Checkboxes save automatically</p>
+
+  <div class="client-bar">
+    <label>Client:</label>
+    <input type="text" id="clientInput" placeholder="Enter client name (e.g. Aembit)" oninput="setClient(this.value)"/>
+    <button onclick="resetAll()">Reset</button>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label"><span>Overall progress</span><span id="progText">0 of 0 complete</span></div>
+    <div class="progress-track"><div class="progress-fill" id="progBar" style="width:0%"></div></div>
+  </div>
+
+  <!-- PHASE 1 -->
+  <div class="phase p1" id="ph1">
+    <div class="phase-header" onclick="toggle('ph1')">
+      <div class="phase-num">1</div>
+      <div style="flex:1"><div class="phase-title">Pre-Work</div><div class="phase-meta">Na-Mii only · Before client is involved</div></div>
+      <span class="phase-chevron">▼</span>
+    </div>
+    <div class="phase-body">
+
+      <div class="step" id="step1">
+        <div class="step-title">Step 1 — Sign Contract + SOW</div>
+        <div class="badges"><span class="badge bo">Melissa</span></div>
+        <ul class="checklist">
+          <li><input type="checkbox" onchange="tick(this)"> Services Agreement signed</li>
+          <li><input type="checkbox" onchange="tick(this)"> SOW signed — confirm tier (1 / 2 / 3 / E)</li>
+          <li><input type="checkbox" onchange="tick(this)"> First invoice sent</li>
+        </ul>
+        <div class="links">
+          <a class="doc-link" href="https://drive.google.com/drive/folders/13XNTg4anUx8WMgqKrIT4IqGfggRWaxkm" target="_blank">📁 Agreements folder</a>
+          <a class="doc-link" href="https://www.notion.so/371db721e44381f395d4cba45a6e8771" target="_blank">📊 Tier playbooks</a>
+        </div>
+      </div>
+
+      <div class="step" id="step2">
+        <div class="step-title">Step 2 — Run Client Discovery</div>
+        <div class="badges"><span class="badge bt">⏱ 10 min</span><span class="badge bs">client-discovery.skill</span><span class="badge bo">Claude</span></div>
+        <ul class="checklist">
+          <li><input type="checkbox" onchange="tick(this)"> Open a new Claude chat</li>
+          <li><input type="checkbox" onchange="tick(this)"> Say: "run client discovery for <b class="cn">[CLIENT]</b> — website: [URL]"</li>
+          <li><input type="checkbox" onchange="tick(this)"> Add LinkedIn URLs if you have them (company + founder)</li>
+          <li><input type="checkbox" onchange="tick(this)"> Discovery Report Google Doc received</li>
+        </ul>
+        <div class="note note-blue">📦 You get: Pre-filled Master Config + Ryyu Voice draft + targeted gap questions only</div>
+        <div class="links">
+          <a class="doc-link" href="https://www.notion.so/371db721e44381b8a81ae1a0f1ea1486" target="_blank">🔍 Client Discovery spec</a>
+        </div>
+      </div>
+
+      <div class="step" id="step3">
+        <div class="step-title">Step 3 — Review Discovery Report</div>
+        <div class="badges"><span class="badge bt">⏱ 15 min</span><span class="badge bo">Melissa</span></div>
+        <ul class="checklist">
+          <li><input type="checkbox" onchange="tick(this)"> Open the Discovery Report Google Doc</li>
+          <li><input type="checkbox" onchange="tick(this)"> Section A: confirm ✅ fields, adjust 🟡 inferred</li>
+          <li><input type="checkbox" onchange="tick(this)"> Section C: Gap Report = your client intake list</li>
+          <li><input type="checkbox" onchange="tick(this)"> Do NOT send the full intake form — only the ❌ gaps</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 2 -->
+  <div class="phase p2" id="ph2">
+    <div class="phase-header" onclick="toggle('ph2')">
+      <div class="phase-num">2</div>
+      <div style="flex:1"><div class="phase-title">Client Input</div><div class="phase-meta">Na-Mii sends · Client fills · ~5–12 questions only</div></div>
+      <span class="phase-chevron">▼</span>
+    </div>
+    <div class="phase-body">
+
+      <div class="step" id="step4">
+        <div class="step-title">Step 4 — Send Gap Questions</div>
+        <div class="badges"><span class="badge bt">⏱ 5 min</span><span class="badge bo">Na-Mii</span></div>
+        <ul class="checklist">
+          <li><input type="checkbox" onchange="tick(this)"> Copy ❌ gap questions from Section C of Discovery Report</li>
+          <li><input type="checkbox" onchange="tick(this)"> Paste into email using template</li>
+          <li><input type="checkbox" onchange="tick(this)"> Group: "Need before we start" vs "Can fill later"</li>
+          <li><input type="checkbox" onchange="tick(this)"> Email sent to client</li>
+        </ul>
+        <div class="note note-yellow">💡 While waiting: you can already run Steps 7 and 8 — they don't need gap answers</div>
+        <div class="links">
+          <a class="doc-link" href="https://www.notion.so/371db721e44381b8a81ae1a0f1ea1486" target="_blank">📧 Email template</a>
+        </div>
+      </div>
+
+      <div class="step" id="step5">
+        <div class="step-title">Step 5 — Client Fills Gaps</div>
+        <div class="badges"><span class="badge bt">⏱ 15–20 min</span><span class="badge bc">CLIENT</span></div>
+        <ul class="checklist">
+          <li><input type="checkbox" onchange="tick(this)"> Client returns answers</li>
+          <li><input type="checkbox" onchange="tick(this)"> Follow up after 48h if no response</li>
+          <li><input type="checkbox" onchange="tick(this)"> Priority 1 gaps filled — required before Step 6</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 3 -->
+  <div class="phase p3" id="ph3">
+    <div class="phase-header" onclick="toggle('ph3')">
+      <div class="phase-num">3</div>
+      <div style="flex:1"><div class="phase-title">Build</div><div class="phase-meta">Na-Mii + Claude · No client involvement</div></div>
+      <span class="phase-chevron">▼</span>
+    </div>
+    <div class="phase-body">
+
+      <div class="step" id="step6">
+        <div class="step-title">Step 6 — Run Master Config</div>
+        <div class="badges"><span class="badge bt">⏱ 20 min</span><span class="badge bs">master-config.skill</span></div>
+        <ul class="checklist">
+          <li><input type="checkbox" onchange="tick(this)"> Open a new Claude chat</li>
+          <li><input type="checkbox" onchange="tick(this)"> Say: "run master config for <b class="cn">[CLIENT]</b>" — paste Discovery Report + gap answers</li>
+          <li><input type="checkbox" onchange="tick(this)"> Confirm all 11 sections filled</li>
+          <li><input type="checkbox" onchange="tick(this)"> Save to: GDrive / Clients / <b class="cn">[CLIENT]</b> / Master Config</li>
+        </ul>
+        <div class="links">
+          <a class="doc-link" href="https://drive.google.com/drive/folders/1NmsDQRD5xh6BtPj_jM2nMyJDMe30CpHE" target="_blank">📄 Master Config folder</a>
+        </div>
+      </div>
+
+      <div class="step" id="step7">
+        <div class="step-title">Step 7 — Build Ryyu Voice</div>
+        <div class="badges"><span class="badge bt">⏱ 60 min</span><span class="badge bs">ryyu-voice.skill</span></div>
+        <ul class="checklist">
+          <li><input type="checkbox" onchange="tick(this)"> Open a new Claude chat</li>
+          <li><input type="checkbox" onchange="tick(this)"> Say: "build Ryyu Voice for <b class="cn">[CLIENT]</b>"</li>
+          <li><input type="checkbox" onchange="tick(this)"> Send 3 calibration outputs to client for feedback</li>
+          <li><input type="checkbox" onchange="tick(this)"> Apply one revision pass — client confirms ✅</li>
+          <li><input type="checkbox" onchange="tick(this)"> Package: <b class="cn">[CLIENT]</b>_RyyuVoice_[YYYY-MM-DD].skill</li>
+          <li><input type="checkbox" onchange="tick(this)"> Save to: GDrive / Clients / <b class="cn">[CLIENT]</b> /</li>
+        </ul>
+        <div class="links">
+          <a class="doc-link" href="https://www.notion.so/364db721e4438122bed3fda6599406dc" target="_blank">🎙️ Ryyu Voice docs</a>
+          <a class="doc-link" href="https://drive.google.com/drive/folders/1qFQPBAEP8VHuS42QUzS0mCceJjo9wn4o" target="_blank">📁 Voice Setup folder</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 4 -->
+  <div class="phase p4" id="ph4">
+    <div class="phase-header" onclick="toggle('ph4')">
+      <div class="phase-num">4</div>
+      <div style="flex:1"><div class="phase-title">Setup</div><div class="phase-meta">Na-Mii · Technical configuration</div></div>
+      <span class="phase-chevron">▼</span>
+    </div>
+    <div class="phase-body">
+
+      <div class="step" id="step8">
+        <div class="step-title">Step 8 — Create Claude Project</div>
+        <div class="badges"><span class="badge bt">⏱ 5 min</span><span class="badge bo">Na-Mii</span></div>
+        <ul class="checklist">
+          <li><input type="checkbox" onchange="tick(this)"> Claude.ai → Projects → Create Project</li>
+          <li><input type="checkbox" onchange="tick(this)"> Name: <b class="cn">[CLIENT]</b> — Content</li>
+        </ul>
+        <div class="note note-yellow">⚠️ Tier E: Skip this step — skills load via Monday links instead</div>
+      </div>
+
+      <div class="step" id="step9">
+        <div class="step-title">Step 9 — Upload to Project Knowledge</div>
+        <div class="badges"><span class="badge bt">⏱ 10 min</span><span class="badge bo">Na-Mii</span></div>
+        <ul class="checklist">
+          <li><input type="checkbox" onchange="tick(this)"> Upload: Master Config Google Doc</li>
+          <li><input type="checkbox" onchange="tick(this)"> Upload: <b class="cn">[CLIENT]</b>_RyyuVoice_[DATE].skill</li>
+          <li><input type="checkbox" onchange="tick(this)"> Upload: step01 → step09 skill files</li>
+          <li><input type="checkbox" onchange="tick(this)"> Upload: daily-pulse.skill, review-board.skill, strategy-agent.skill</li>
+          <li><input type="checkbox" onchange="tick(this)"> Confirm all files processed</li>
+        </ul>
+      </div>
+
+      <div class="step" id="step10">
+        <div class="step-title">Step 10 — Install Voice Skill</div>
+        <div class="badges"><span class="badge bt">⏱ 10 min</span><span class="badge bo">Na-Mii</span></div>
+        <ul class="checklist">
+          <li><input type="checkbox" onchange="tick(this)"> Test prompt 1: opinion post on a current industry trend</li>
+          <li><input type="checkbox" onchange="tick(this)"> Test prompt 2: 3-sentence educational explanation</li>
+          <li><input type="checkbox" onchange="tick(this)"> Test prompt 3: 2-paragraph blog intro</li>
+          <li><input type="checkbox" onchange="tick(this)"> All 3 pass ✅ — note project URL in Notion voice profile</li>
+        </ul>
+        <div class="links">
+          <a class="doc-link" href="https://drive.google.com/drive/folders/1qFQPBAEP8VHuS42QUzS0mCceJjo9wn4o" target="_blank">📋 Install Playbook</a>
+        </div>
+      </div>
+
+      <div class="step" id="step11">
+        <div class="step-title">Step 11 — Set Up Cowork Scheduled Tasks</div>
+        <div class="badges"><span class="badge bt">⏱ 10 min</span><span class="badge bo">Claude</span></div>
+        <ul class="checklist">
+          <li><input type="checkbox" onchange="tick(this)"> Step 01 — Research: every 2 weeks, Monday 9AM [TIMEZONE]</li>
+          <li><input type="checkbox" onchange="tick(this)"> Step 09 — KPI: every Monday 9AM [TIMEZONE]</li>
+          <li><input type="checkbox" onchange="tick(this)"> Daily Pulse: every day 9AM [TIMEZONE]</li>
+          <li><input type="checkbox" onchange="tick(this)"> Run each once manually to confirm connections</li>
+        </ul>
+        <div class="note note-yellow">⚠️ Tier E: Skip — client uses calendar reminders. See <a href="https://www.notion.so/371db721e44381c89aead53f9f9aa3e7" target="_blank">Tier E Playbook</a></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 5 -->
+  <div class="phase p5" id="ph5">
+    <div class="phase-header" onclick="toggle('ph5')">
+      <div class="phase-num">5</div>
+      <div style="flex:1"><div class="phase-title">Launch 🚀</div><div class="phase-meta">Claude + Melissa · First real run</div></div>
+      <span class="phase-chevron">▼</span>
+    </div>
+    <div class="phase-body">
+
+      <div class="step" id="step12">
+        <div class="step-title">Step 12 — Run Step 01 (Test)</div>
+        <div class="badges"><span class="badge bs">step01.skill</span></div>
+        <ul class="checklist">
+          <li><input type="checkbox" onchange="tick(this)"> New chat in client's Claude Project</li>
+          <li><input type="checkbox" onchange="tick(this)"> Say: "run Step 01 — research refresh"</li>
+          <li><input type="checkbox" onchange="tick(this)"> Confirm Slack digest delivered to correct channel</li>
+          <li><input type="checkbox" onchange="tick(this)"> Confirm Notion output page updated</li>
+          <li><input type="checkbox" onchange="tick(this)"> Fix any connection issues before proceeding</li>
+        </ul>
+      </div>
+
+      <div class="step" id="step13">
+        <div class="step-title">Step 13 — First Content Calendar</div>
+        <div class="badges"><span class="badge bt">⏱ 30 min + 24h Gate 1</span><span class="badge bs">step02.skill</span><span class="badge bs">step03.skill</span></div>
+        <ul class="checklist">
+          <li><input type="checkbox" onchange="tick(this)"> New chat → "run Step 02 — monthly goals"</li>
+          <li><input type="checkbox" onchange="tick(this)"> Approve Gate 1 in Slack (within 24h)</li>
+          <li><input type="checkbox" onchange="tick(this)"> New chat → "run Step 03 — build the content calendar"</li>
+          <li><input type="checkbox" onchange="tick(this)"> Approve calendar in Slack</li>
+          <li><input type="checkbox" onchange="tick(this)"> First pieces enter production ✅</li>
+        </ul>
+        <div class="note note-green">🎉 Engine is live! First content cycle running.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TIER REFERENCE -->
+  <div class="phase pT" id="phT">
+    <div class="phase-header" onclick="toggle('phT')">
+      <div class="phase-num" style="background:#999">?</div>
+      <div style="flex:1"><div class="phase-title">Tier Reference</div><div class="phase-meta">Steps 8–11 differ by tier</div></div>
+      <span class="phase-chevron">▼</span>
+    </div>
+    <div class="phase-body">
+      <table class="tier-table">
+        <tr><th></th><th>Tier 1</th><th>Tier 2</th><th>Tier 3</th><th>Tier E</th></tr>
+        <tr><td>Claude Project</td><td>Na-Mii's account</td><td>Client's account</td><td>Client's account</td><td>Individual only</td></tr>
+        <tr><td>Steps 8–11</td><td>Standard</td><td>Standard</td><td>Standard</td><td>Monday-based</td></tr>
+        <tr><td>Cowork tasks</td><td>Na-Mii's Cowork</td><td>Client's Cowork</td><td>Client's Cowork</td><td>Manual triggers</td></tr>
+        <tr><td>Na-Mii operates?</td><td>Yes, always</td><td>Yes, always</td><td>No, after handoff</td><td>No, client runs</td></tr>
+      </table>
+      <div class="links" style="margin-top:10px">
+        <a class="doc-link" href="https://www.notion.so/371db721e44381f395d4cba45a6e8771" target="_blank">📊 Full tier playbooks →</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+  function toggle(id) {
+    document.getElementById(id).classList.toggle('collapsed');
+  }
+  function setClient(v) {
+    document.querySelectorAll('.cn').forEach(el => el.textContent = v || '[CLIENT]');
+    save();
+  }
+  function tick(cb) {
+    cb.closest('li').classList.toggle('done', cb.checked);
+    const step = cb.closest('.step');
+    const all = step.querySelectorAll('input[type=checkbox]');
+    const done = step.querySelectorAll('input[type=checkbox]:checked');
+    step.classList.toggle('step-done', all.length > 0 && all.length === done.length);
+    updateProgress();
+    save();
+  }
+  function updateProgress() {
+    const all = document.querySelectorAll('.checklist input');
+    const done = document.querySelectorAll('.checklist input:checked');
+    const pct = all.length ? Math.round(done.length/all.length*100) : 0;
+    document.getElementById('progBar').style.width = pct + '%';
+    document.getElementById('progText').textContent = `${done.length} of ${all.length} complete`;
+  }
+  function resetAll() {
+    if (!confirm('Reset all checkboxes for this client?')) return;
+    document.querySelectorAll('.checklist input').forEach(cb => { cb.checked = false; cb.closest('li').classList.remove('done'); });
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('step-done'));
+    updateProgress();
+    localStorage.removeItem('ryyu_ob');
+  }
+  function save() {
+    const state = { client: document.getElementById('clientInput').value, checks: {} };
+    document.querySelectorAll('.checklist input').forEach((cb,i) => state.checks[i] = cb.checked);
+    localStorage.setItem('ryyu_ob', JSON.stringify(state));
+  }
+  function load() {
+    const raw = localStorage.getItem('ryyu_ob');
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    if (s.client) { document.getElementById('clientInput').value = s.client; setClient(s.client); }
+    document.querySelectorAll('.checklist input').forEach((cb,i) => {
+      if (s.checks[i]) { cb.checked = true; cb.closest('li').classList.add('done'); }
+    });
+    document.querySelectorAll('.step').forEach(step => {
+      const all = step.querySelectorAll('input'); const done = step.querySelectorAll('input:checked');
+      step.classList.toggle('step-done', all.length > 0 && all.length === done.length);
+    });
+    updateProgress();
+  }
+  load();
+  updateProgress();
+</script>
+</body>
+</html>
